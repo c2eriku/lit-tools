@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <title>統一發票三聯式-列印工具</title>
+
+    <style>
+        /* ---- Shared style ---- */
+        body {
+            font-size: 12px;
+        }
+
+        .offset-setter {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            input {
+                border: 1px solid black;
+                margin: 2px;
+                width: 3rem;
+                height: 2rem;
+            }
+        }
+
+        input {
+            margin: 0;
+            padding: 0 0 0 1mm;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            box-sizing: border-box;
+        }
+
+        input:disabled {
+            color: black;
+        }
+
+        .justify-text {
+            padding: 0 .3rem;
+            width: 100%;
+            text-align: justify;
+            text-align-last: justify;
+            position: relative;
+        }
+
+        .justify-text::after {
+            content: "\200B";
+            display: inline-block;
+            width: 100%;
+            height: 0;
+        }
+
+
+        /* ---- Scoped style ----- */
+        #layout {
+            display: grid;
+            grid-template-columns: fit-content(100%) fit-content(100%);
+        }
+
+        #invoice {
+            position: relative;
+            border: 1px solid gray;
+            width: fit-content;
+        }
+
+        #info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #info>* {
+            height: 6mm;
+            max-height: 6mm;
+        }
+
+        #info>div {
+            box-sizing: border-box;
+            text-align: justify;
+        }
+
+        #info>div>i {
+            display: inline-block;
+            width: 100%;
+        }
+
+        #infoR2 input {
+            padding: 0;
+            text-align: center;
+        }
+
+        #uniformIdInputGroup {
+            display: flex;
+        }
+
+        #uniformIdInputGroup>div {
+            box-sizing: border-box;
+            border: 1px solid black;
+            aspect-ratio: 1;
+            width: 5.81mm;
+        }
+
+
+        #invoiceForm {
+            display: grid;
+            grid-template-columns: 40mm 15mm 16mm 28.5mm 45mm;
+            grid-template-rows: 5mm 6mm 6mm 6mm 6mm 6mm 6mm 7.5mm 6mm 7mm;
+
+            >div {
+                box-sizing: border-box;
+                border: 1px solid black;
+                /* padding: 0 6px; */
+                /* line-height: ; */
+                text-align: justify;
+            }
+
+            >div>i {
+                display: inline-block;
+                width: 100%;
+            }
+        }
+
+
+        #tax {
+            display: flex;
+        }
+
+        #taxGroup {
+            display: flex;
+            width: 100%;
+
+            div {
+                text-align: center;
+                flex: 1;
+
+                .tax-title {
+                    outline: 1px solid black;
+                    font-size: .4rem;
+                }
+
+                .tax-radio {
+                    outline: 1px solid black;
+                    padding: 0;
+                    appearance: none;
+                    /* Remove native checkbox/radio UI */
+
+                    height: 18px;
+                    background: transparent;
+                    /* Transparent background */
+                    cursor: pointer;
+                    position: relative;
+                    vertical-align: middle;
+                }
+
+                .tax-radio:checked::after {
+                    content: 'v';
+                    position: relative;
+                    display: block;
+                    transform: translateX(-50%);
+                    left: 50%;
+                    width: fit-content;
+                }
+            }
+        }
+
+
+
+        @media print {
+            body>* {
+                display: none;
+            }
+
+            .offset-setter {
+                display: none;
+            }
+
+            #invoice {
+                display: block;
+                border: 0 !important;
+            }
+
+            #invoice * {
+                border: 0 !important;
+                outline: 0 !important;
+                box-shadow: none !important;
+                background: transparent !important;
+                color: transparent !important;
+            }
+
+            #invoice input {
+                color: black !important;
+                -webkit-text-fill-color: black !important;
+                background: transparent !important;
+                border: 0 !important;
+                outline: 0 !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="offset-setter" style="position: absolute; right: 0;">
+        <div>
+            <label>X軸</label><input id="xOffsetInput" type="number" min="0">
+        </div>
+        <div>
+            <label>Y軸</label><input id="yOffsetInput" type="number" min="0">
+        </div>
+        <button type="button" id="refreshButton">重置表單</button>
+    </div>
+
+    <div id="layout">
+        <div></div>
+        <div id="yOffset" class="offsetter">
+        </div>
+        <div id="xOffset" class="offsetter">
+        </div>
+        <div id="invoice">
+            <div id="info">
+                <div style="display: flex;">
+                    <div style="width: 17mm;">買受人：</div>
+                    <div style="width: 24em;">
+                        <input>
+                    </div>
+                </div>
+                <div id="infoR2" style="display: flex;">
+                    <div style="width: 17mm;">統一編號：</div>
+                    <div id="uniformIdInputGroup">
+                        <div><input maxlength="1"></div>
+                        <div><input maxlength="1"></div>
+                        <div><input maxlength="1"></div>
+                        <div><input maxlength="1"></div>
+                        <div><input maxlength="1"></div>
+                        <div><input maxlength="1"></div>
+                        <div><input maxlength="1"></div>
+                        <div><input maxlength="1"></div>
+                    </div>
+                    <div
+                        style="padding-left:1rem; box-sizing: border-box ;width: 30mm; text-align: justify; text-align-last: justify;">
+                        中華民國114年
+                    </div>
+                    <div><input id="month" style="width: 7mm;" maxlength="2"></div>
+                    <div>月</div>
+                    <div><input id="day" style="width: 7mm;" maxlength="2"></div>
+                    <div>日</div>
+                </div>
+                <div style="display: flex;">
+                    <div style="width: 17mm;">地址：</div>
+                    <div style="width: 36em;">
+                        <input>
+                    </div>
+                </div>
+            </div>
+
+
+            <form id="invoiceForm">
+
+                <div class="justify-text">品名</div>
+                <div class="justify-text">數量</div>
+                <div class="justify-text">單價</div>
+                <div class="justify-text">金額</div>
+                <div class="justify-text">備註</div>
+
+                <div><input id="product0"></div>
+                <div><input id="qty0"></div>
+                <div><input id="unitPrice0"></div>
+                <div><input id="subtotal0" disabled></div>
+                <div style="grid-row: span 2;"></div>
+
+                <div><input id="product1"></div>
+                <div><input id="qty1"></div>
+                <div><input id="unitPrice1"></div>
+                <div><input id="subtotal1" disabled></div>
+
+                <div><input id="product2"></div>
+                <div><input id="qty2"></div>
+                <div><input id="unitPrice2"></div>
+                <div><input id="subtotal2" disabled></div>
+                <div class="justify-text">營業人蓋用統一發票專用章</div>
+
+                <div><input id="product3"></div>
+                <div><input id="qty3"></div>
+                <div><input id="unitPrice3"></div>
+                <div><input id="subtotal3" disabled></div>
+                <div style="grid-row: span 6;"></div>
+
+                <div><input id="product4"></div>
+                <div><input id="qty4"></div>
+                <div><input id="unitPrice4"></div>
+                <div><input id="subtotal4" disabled></div>
+                <div class="justify-text" style="grid-column: span 3;">銷售額合計</div>
+
+                <div><input id="saleSubtotal" disabled></div>
+                <div id="tax" style="grid-column: span 3; display: flex;">
+                    <div class="justify-text" style="width: 30.5mm; line-height: 7.5mm;">營業稅</div>
+                    <div id="taxGroup">
+                        <div style="flex: 1;">
+                            <div class="tax-title">應稅</div>
+                            <input type="radio" name="taxGroup" class="tax-radio" value="0.05" checked>
+                        </div>
+                        <div style="flex: 1;">
+                            <div class="tax-title">零稅率</div>
+                            <input type="radio" name="taxGroup" class="tax-radio" value="0">
+                        </div>
+                        <div style="flex: 1;">
+                            <div class="tax-title">免稅</div>
+                            <input type="radio" name="taxGroup" class="tax-radio" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div><input id="taxSubtotal" disabled></div>
+                <div class="justify-text" style="grid-column: span 3;">總計</div>
+                <div><input id="total" disabled></div>
+
+                <div style="grid-row: span 4; width: 99.5mm; display: flex;">
+                    <div style="width: 14.5mm; font-size: .7em;">總計新臺幣<br>(中文大寫)</div>
+                    <div>
+                        <div style="display: flex; width: 85mm;">
+                            <div><input id="chtNum8" disabled></div>
+                            <div>億</div>
+                            <div><input id="chtNum7" disabled></div>
+                            <div>仟</div>
+                            <div><input id="chtNum6" disabled></div>
+                            <div>佰</div>
+                            <div><input id="chtNum5" disabled></div>
+                            <div>拾</div>
+                            <div><input id="chtNum4" disabled></div>
+                            <div>萬</div>
+                            <div><input id="chtNum3" disabled></div>
+                            <div>仟</div>
+                            <div><input id="chtNum2" disabled></div>
+                            <div>佰</div>
+                            <div><input id="chtNum1" disabled></div>
+                            <div>拾</div>
+                            <div><input id="chtNum0" disabled></div>
+                            <div>元</div>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</body>
+
+
+<script>
+    // --- View Components ---
+    const subtotalInputs = [];
+    const qtyInputs = [];
+    const priceInputs = [];
+    const allInputs = Array.from(document.querySelectorAll('#invoice input'));
+
+    // ---- 初始化 ----
+    function init() {
+        const saved = JSON.parse(localStorage.getItem('invoiceOffsets') || '{}');
+        if (saved.x !== undefined) {
+            xOffsetInput.value = saved.x;
+            setElementStyle(xOffset, "width", saved.x + "px");
+        }
+        if (saved.y !== undefined) {
+            yOffsetInput.value = saved.y;
+            setElementStyle(yOffset, "height", saved.y + "px");
+        }
+
+        const todayDate = new Date();
+        month.value = todayDate.getMonth() + 1;
+        day.value = todayDate.getDate();
+    }
+
+
+    // ---- Input工具：按順序跳格 ----
+    function bindSequentialFocus(inputs) {
+        inputs.forEach((input, idx) => {
+            input.addEventListener('input', e => {
+                const { maxLength, value } = e.target;
+                if (maxLength && value.length === maxLength && idx < inputs.length - 1) {
+                    inputs[idx + 1].focus();
+                }
+            });
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Backspace' && !input.value && idx > 0) {
+                    inputs[idx - 1].focus();
+                }
+            });
+        });
+    }
+    // 綁定 #infoR2 的自動跳格
+    bindSequentialFocus(document.querySelectorAll('#infoR2 input'));
+
+
+    // ---- Input工具：Enter 跳下一格(略過 disabled) ----
+    allInputs.forEach((input, idx) => {
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                let next = idx + 1;
+                while (next < allInputs.length && allInputs[next].disabled) next++;
+                if (next < allInputs.length) allInputs[next].focus();
+            }
+        });
+
+        // 根據ID前綴分類
+        const id = input.id || '';
+        if (id.startsWith('qty')) qtyInputs.push(input);
+        if (id.startsWith('unitPrice')) priceInputs.push(input);
+        if (id.startsWith('subtotal')) subtotalInputs.push(input);
+    });
+
+
+    // ---- 金額計算 ----
+    function updateAmount(index) {
+        const qty = parseFloat(qtyInputs[index]?.value) || 0;
+        const price = parseFloat(priceInputs[index]?.value) || 0;
+        let result = qty * price;
+        if (result === 0) result = '';
+        if (subtotalInputs[index]) subtotalInputs[index].value = result;
+        updateSummary();
+    }
+
+    function updateSummary() {
+        const saleSum = subtotalInputs.reduce((acc, input) => acc + (parseFloat(input.value) || 0), 0);
+        const taxSum = saleSum * taxRate;
+
+        if (saleSubtotal) saleSubtotal.value = saleSum.toFixed(0);
+        if (taxSubtotal) taxSubtotal.value = taxSum.toFixed(0);
+        if (total) total.value = Number(saleSubtotal.value) + Number(taxSubtotal.value);
+
+        numberToChinese(total.value);
+    }
+
+    qtyInputs.forEach((input, i) => input.addEventListener('input', () => updateAmount(i)));
+    priceInputs.forEach((input, i) => input.addEventListener('input', () => updateAmount(i)));
+
+    // ---- 數字轉中文 ----
+    const digit = ['零', '壹', '貳', '參', '肆', '伍', '陸', '柒', '捌', '玖'];
+    const chtNumInputs = Array.from({ length: 9 }, (_, i) => document.getElementById('chtNum' + i));
+    function numberToChinese(num) {
+        chtNumInputs.forEach(el => el.value = '');
+        const numStr = String(num);
+        for (let i = 0; i < numStr.length; i++) {
+            const n = parseInt(numStr[numStr.length - 1 - i], 10);
+            if (!isNaN(n) && chtNumInputs[i]) chtNumInputs[i].value = digit[n];
+        }
+    }
+
+
+    function setElementStyle(element, property, value) {
+        element.style[property] = value;
+    }
+
+
+    // ---- x y offset調整 ----
+    const yOffset = document.getElementById('yOffset');
+    const yOffsetInput = document.getElementById('yOffsetInput');
+    yOffsetInput.addEventListener('input', e => {
+        const height = e.target.value;
+        setElementStyle(yOffset, 'height', height + 'px');
+        saveOffsets();
+    });
+
+    const xOffset = document.getElementById('xOffset');
+    const xOffsetInput = document.getElementById('xOffsetInput');
+    xOffsetInput.addEventListener('input', e => {
+        const width = e.target.value;
+        setElementStyle(xOffset, 'width', width + 'px');
+        saveOffsets();
+    });
+
+    // 更新 localStorage
+    function saveOffsets() {
+        const x = parseInt(xOffsetInput.value) || 0;
+        const y = parseInt(yOffsetInput.value) || 0;
+        localStorage.setItem(OFFSET_STORAGE_KEY, JSON.stringify({ x, y }));
+    }
+
+
+    // ---- taxGroup Radio行為 ----
+    let taxRate = document.querySelector('input[name="taxGroup"]:checked')?.value ?? 0;
+    const radios = document.querySelectorAll('input[name="taxGroup"]');
+
+    radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            taxRate = document.querySelector('input[name="taxGroup"]:checked')?.value ?? 0;
+            updateSummary();
+        });
+    });
+
+
+    // ---- 只能輸入數字 ----
+    const numInputs = document.querySelectorAll('#uniformIdInputGroup input , input[id*="qty"], input[id*="price"], input[id*="unitPrice"]');
+    numInputs.forEach(input => {
+        input.addEventListener('input', e => {
+            e.target.value = e.target.value.replace(/[^\d.]/g, '');
+        });
+    });
+
+
+    // ---- 重新整理 ----
+    const refreshButton = document.getElementById('refreshButton');
+    refreshButton.addEventListener('click', () => { window.location.reload(); });
+
+
+    // ---- 執行區 ----
+    init();
+
+</script>
+
+</html>
